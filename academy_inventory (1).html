@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 교재 재고 관리 시스템</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f1eb;
+    --bg2: #ede9e0;
+    --surface: #ffffff;
+    --surface2: #faf8f4;
+    --border: #d9d3c7;
+    --text: #1a1714;
+    --text2: #5c5650;
+    --text3: #9c9490;
+    --accent: #c0392b;
+    --accent2: #e74c3c;
+    --green: #27ae60;
+    --blue: #2980b9;
+    --yellow: #f39c12;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+  }
+  [data-theme="dark"] {
+    --bg: #13120f;
+    --bg2: #1c1a16;
+    --surface: #242118;
+    --surface2: #2e2b23;
+    --border: #3d3a31;
+    --text: #f0ece3;
+    --text2: #b8b0a0;
+    --text3: #706860;
+    --accent: #e05a4f;
+    --accent2: #ff6b5e;
+    --green: #2ecc71;
+    --blue: #3498db;
+    --yellow: #f1c40f;
+    --shadow: 0 2px 8px rgba(0,0,0,0.3);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.3s, color 0.3s;
+  }
+  .mono { font-family: 'DM Mono', monospace; }
+
+  /* Header */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .logo { font-size: 17px; font-weight: 700; letter-spacing: -0.5px; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .logo span { color: var(--accent); }
+
+  /* Nav */
+  nav { display: flex; gap: 4px; }
+  .nav-btn {
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.2s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .nav-btn:hover { background: var(--bg2); color: var(--text); }
+  .nav-btn.active { background: var(--accent); color: white; }
+
+  /* Theme toggle */
+  .theme-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+  .theme-btn:hover { background: var(--border); }
+
+  /* Main */
+  main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+
+  /* Page */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+  }
+  .card-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .card-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .card-body { padding: 20px 24px; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+  }
+  .stat-label { font-size: 12px; color: var(--text3); font-weight: 500; margin-bottom: 6px; }
+  .stat-value { font-size: 26px; font-weight: 700; color: var(--text); font-family: 'DM Mono', monospace; }
+  .stat-sub { font-size: 12px; color: var(--text3); margin-top: 4px; }
+  .stat-card.red .stat-value { color: var(--accent); }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.blue .stat-value { color: var(--blue); }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  thead tr { border-bottom: 2px solid var(--border); }
+  th { padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody tr.status-urgent { background: rgba(192, 57, 43, 0.07); }
+  tbody tr.status-urgent:hover { background: rgba(192, 57, 43, 0.12); }
+
+  /* Status badges */
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-red { background: rgba(192,57,43,0.12); color: var(--accent); border: 1px solid rgba(192,57,43,0.25); }
+  .badge-green { background: rgba(39,174,96,0.12); color: var(--green); border: 1px solid rgba(39,174,96,0.25); }
+  .badge-blue { background: rgba(41,128,185,0.12); color: var(--blue); border: 1px solid rgba(41,128,185,0.25); }
+  .badge-yellow { background: rgba(243,156,18,0.12); color: var(--yellow); border: 1px solid rgba(243,156,18,0.25); }
+
+  /* Inputs */
+  .input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Noto Sans KR', sans-serif;
+    transition: border 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(192,57,43,0.12); }
+  .input-sm { padding: 5px 8px; font-size: 13px; }
+  select.input { cursor: pointer; }
+
+  /* Buttons */
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+    font-family: 'Noto Sans KR', sans-serif;
+    display: inline-flex; align-items: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(192,57,43,0.3); }
+  .btn-secondary { background: var(--bg2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--bg2); }
+  .btn-sm { padding: 5px 12px; font-size: 13px; }
+  .btn-icon { padding: 6px; }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { filter: brightness(1.1); }
+
+  /* Count input */
+  .count-ctrl { display: flex; align-items: center; gap: 6px; }
+  .count-ctrl input[type=number] { width: 64px; text-align: center; }
+  .count-btn { width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .count-btn:hover { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* Form grid */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .form-group label { display: block; font-size: 12px; font-weight: 600; color: var(--text3); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.4px; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .filter-chip {
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    transition: all 0.15s;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* Notification dot */
+  .notif { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+
+  /* Row clickable */
+  tbody tr.clickable-row { cursor: pointer; }
+  tbody tr.clickable-row td.action-cell { cursor: default; }
+
+  /* Detail/Edit modal tabs */
+  .modal-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .modal-tab {
+    padding: 12px 20px; font-size: 14px; font-weight: 500;
+    cursor: pointer; border: none; background: transparent;
+    color: var(--text3); border-bottom: 2px solid transparent;
+    transition: all 0.15s; font-family: 'Noto Sans KR', sans-serif;
+    margin-bottom: -1px;
+  }
+  .modal-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .modal-tab-content { display: none; }
+  .modal-tab-content.active { display: block; }
+
+  /* Detail field */
+  .detail-row { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { width: 120px; min-width: 120px; padding: 11px 14px; font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.4px; background: var(--surface2); }
+  .detail-value { padding: 11px 14px; font-size: 14px; color: var(--text); flex: 1; word-break: break-all; }
+
+  /* Inline confirm */
+  .inline-confirm { display: none; align-items: center; gap: 8px; }
+  .inline-confirm.show { display: flex; }
+  .inline-confirm span { font-size: 13px; color: var(--accent); font-weight: 500; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 680px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.96) translateY(8px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: scale(1) translateY(0); }
+  .modal-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* Sheets info banner */
+  .sheets-banner {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: var(--text2);
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .sheets-banner code { font-family: 'DM Mono', monospace; font-size: 12px; background: var(--bg2); padding: 1px 6px; border-radius: 4px; color: var(--text); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg2); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--text);
+    color: var(--bg);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 999;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+    box-shadow: var(--shadow-lg);
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* Section title */
+  .section-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+  .section-sub { font-size: 14px; color: var(--text3); margin-bottom: 24px; }
+
+  @media (max-width: 640px) {
+    main { padding: 16px; }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    header { padding: 0 16px; }
+    .logo-text { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    📚 <span>DESK</span><span style="color:var(--text)">BOOK</span>
+    <span style="font-size:12px;font-weight:400;color:var(--text3);margin-left:6px" class="logo-text">교재 재고 관리 시스템</span>
+  </div>
+  <nav>
+    <button class="nav-btn active" onclick="showPage('inventory')">📦 재고 관리</button>
+    <button class="nav-btn" onclick="showPage('history')" id="history-nav-btn">
+      📋 주문 히스토리 <span id="urgent-dot" style="display:none" class="notif" style="margin-left:4px"></span>
+    </button>
+    <button class="nav-btn" onclick="showPage('settings')">⚙️ 설정</button>
+  </nav>
+  <button class="theme-btn" onclick="toggleTheme()" title="다크모드 전환">🌙</button>
+</header>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Main -->
+<main>
+
+<!-- ===== INVENTORY PAGE ===== -->
+<div class="page active" id="page-inventory">
+  <div class="section-title">📦 통합 재고 관리</div>
+  <div class="section-sub">모든 교재의 현재 재고 수량을 확인하고 수정할 수 있습니다.</div>
+
+  <div class="stats-grid" id="inv-stats"></div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">교재 목록</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <input class="input" style="width:220px" placeholder="🔍 교재명 검색..." oninput="filterInventory(this.value)" id="inv-search">
+        <button class="btn btn-primary" onclick="openAddBookModal()">＋ 교재 추가</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportInventoryCSV()">⬇ CSV 내보내기</button>
+        <button class="btn btn-secondary btn-sm" onclick="syncToSheets('inventory')">☁ 시트 동기화</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>교재명</th>
+            <th>주문처</th>
+            <th>현재 수량</th>
+            <th>최저 수량</th>
+            <th>상태</th>
+            <th>수정</th>
+          </tr>
+        </thead>
+        <tbody id="inventory-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== HISTORY PAGE ===== -->
+<div class="page" id="page-history">
+  <div class="section-title">📋 주문 히스토리</div>
+  <div class="section-sub">주문 내역을 기록하고 필터링하여 관리합니다.</div>
+
+  <div class="stats-grid" id="hist-stats"></div>
+
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header">
+      <div class="card-title">새 주문 기록 추가</div>
+    </div>
+    <div class="card-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>주문 상태</label>
+          <select class="input" id="h-status">
+            <option value="주문 필요">🔴 주문 필요</option>
+            <option value="주문 완료">🔵 주문 완료</option>
+            <option value="입고 완료">🟢 입고 완료</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>주문 일자</label>
+          <input type="date" class="input" id="h-date">
+        </div>
+        <div class="form-group">
+          <label>구분</label>
+          <select class="input" id="h-category">
+            <option value="유치부">유치부</option>
+            <option value="초등부">초등부</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>반명</label>
+          <input type="text" class="input" id="h-class" placeholder="예: Master A, K2반">
+        </div>
+        <div class="form-group">
+          <label>교재명</label>
+          <input type="text" class="input" id="h-book" placeholder="예: English World 4" list="book-list">
+          <datalist id="book-list"></datalist>
+        </div>
+        <div class="form-group">
+          <label>수량</label>
+          <input type="number" class="input" id="h-qty" min="1" value="1" placeholder="1">
+        </div>
+        <div class="form-group">
+          <label>주문처</label>
+          <input type="text" class="input" id="h-vendor" placeholder="예: 넥서스, A서점" list="vendor-list">
+          <datalist id="vendor-list"></datalist>
+        </div>
+        <div class="form-group">
+          <label>담당 선생님</label>
+          <input type="text" class="input" id="h-teacher" placeholder="예: 이OO, 김OO">
+        </div>
+        <div class="form-group">
+          <label>메모</label>
+          <input type="text" class="input" id="h-note" placeholder="선택 입력">
+        </div>
+      </div>
+      <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px">
+        <button class="btn btn-secondary" onclick="clearHistoryForm()">초기화</button>
+        <button class="btn btn-primary" onclick="addHistoryRecord()">＋ 기록 추가</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">주문 내역 <span id="hist-count" style="color:var(--text3);font-weight:400;font-size:13px"></span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV('filtered')">⬇ 현재 필터 CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV('all')">⬇ 전체 CSV</button>
+        <button class="btn btn-secondary btn-sm" onclick="syncToSheets('history')">☁ 시트 동기화</button>
+      </div>
+    </div>
+    <div class="card-body" style="padding-bottom:12px">
+      <div class="filter-bar" id="filter-bar">
+        <span style="font-size:12px;color:var(--text3);font-weight:600">필터:</span>
+        <button class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">전체</button>
+        <button class="filter-chip" data-filter="주문 필요" onclick="setFilter('주문 필요',this)">🔴 주문 필요</button>
+        <button class="filter-chip" data-filter="주문 완료" onclick="setFilter('주문 완료',this)">🔵 주문 완료</button>
+        <button class="filter-chip" data-filter="입고 완료" onclick="setFilter('입고 완료',this)">🟢 입고 완료</button>
+        <div style="width:1px;height:20px;background:var(--border)"></div>
+        <button class="filter-chip" data-filter="유치부" onclick="setFilter('유치부',this)">유치부</button>
+        <button class="filter-chip" data-filter="초등부" onclick="setFilter('초등부',this)">초등부</button>
+      </div>
+      <div style="margin-top:12px">
+        <input class="input" style="max-width:240px" placeholder="🔍 교재명/담당자 검색..." oninput="searchHistory(this.value)" id="hist-search">
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>상태</th>
+            <th>주문 일자</th>
+            <th>구분</th>
+            <th>반명</th>
+            <th>교재명 <span style="font-weight:400;opacity:0.55;font-size:11px;letter-spacing:0">(행 클릭 → 수정)</span></th>
+            <th>수량</th>
+            <th>주문처</th>
+            <th>담당 선생님</th>
+            <th>메모</th>
+            <th>빠른 상태 변경</th>
+            <th>삭제</th>
+          </tr>
+        </thead>
+        <tbody id="history-table"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SETTINGS PAGE ===== -->
+<div class="page" id="page-settings">
+  <div class="section-title">⚙️ 설정</div>
+  <div class="section-sub">Google Sheets 연동 및 기타 설정을 관리합니다.</div>
+
+  <div class="card" style="max-width:680px;margin-bottom:20px">
+    <div class="card-header"><div class="card-title">☁ Google Sheets 연동</div></div>
+    <div class="card-body">
+      <div class="sheets-banner">
+        <span style="font-size:18px">ℹ️</span>
+        <div>
+          <div style="font-weight:600;margin-bottom:6px;color:var(--text)">연동 방법 안내</div>
+          Google Sheets를 DB로 사용하려면 Google Apps Script를 통해 웹앱 URL을 발급받아야 합니다.<br><br>
+          <b>① Google Sheets 생성</b> → 시트명: <code>inventory</code>, <code>history</code><br>
+          <b>② 확장 프로그램 → Apps Script</b> → 아래 엔드포인트 코드 붙여넣기<br>
+          <b>③ 웹앱으로 배포</b> → 접근 권한: 모든 사용자<br>
+          <b>④ 발급된 URL을 아래에 입력</b>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Apps Script 웹앱 URL</label>
+        <input type="url" class="input" id="sheets-url" placeholder="https://script.google.com/macros/s/.../exec">
+      </div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>스프레드시트 ID</label>
+        <input type="text" class="input" id="sheets-id" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms">
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px">
+        <button class="btn btn-primary" onclick="saveSheetSettings()">설정 저장</button>
+        <button class="btn btn-secondary" onclick="testSheetConnection()">연결 테스트</button>
+        <button class="btn btn-ghost" onclick="loadFromSheets()">📥 시트에서 불러오기</button>
+      </div>
+      <div id="sheet-status" style="margin-top:12px;font-size:13px;color:var(--text3)"></div>
+
+      <!-- Apps Script 코드 샘플 -->
+      <details style="margin-top:20px">
+        <summary style="cursor:pointer;font-size:13px;font-weight:600;color:var(--blue);user-select:none">📄 Apps Script 코드 보기 (클릭하여 펼치기)</summary>
+        <pre style="margin-top:12px;background:var(--bg2);padding:16px;border-radius:8px;font-size:12px;font-family:'DM Mono',monospace;color:var(--text2);overflow-x:auto;white-space:pre-wrap;border:1px solid var(--border)">function doGet(e) {
+  const ss = SpreadsheetApp.openById('YOUR_SPREADSHEET_ID');
+  const sheet = ss.getSheetByName(e.parameter.sheet || 'inventory');
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const rows = data.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = r[i]);
+    return obj;
+  });
+  return ContentService.createTextOutput(JSON.stringify({data: rows}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  const ss = SpreadsheetApp.openById('YOUR_SPREADSHEET_ID');
+  const payload = JSON.parse(e.postData.contents);
+  const sheet = ss.getSheetByName(payload.sheet || 'inventory');
+  if (payload.action === 'append') {
+    sheet.appendRow(payload.row);
+  } else if (payload.action === 'clear_and_write') {
+    sheet.clearContents();
+    payload.rows.forEach(r => sheet.appendRow(r));
+  }
+  return ContentService.createTextOutput(JSON.stringify({ok: true}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+      </details>
+    </div>
+  </div>
+
+  <div class="card" style="max-width:680px;margin-bottom:20px">
+    <div class="card-header"><div class="card-title">🗄 데이터 관리</div></div>
+    <div class="card-body">
+      <div style="margin-bottom:10px;font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px">CSV 내보내기</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+        <button class="btn btn-ghost btn-sm" onclick="exportInventoryCSV()">⬇ 재고 목록 CSV</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportCSV('all')">⬇ 주문 히스토리 CSV (전체)</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportAllCSV()">⬇ 재고 + 히스토리 통합 CSV</button>
+      </div>
+      <div style="margin-bottom:10px;font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px">기타</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-secondary btn-sm" onclick="exportAllData()">⬇ 전체 데이터 JSON 백업</button>
+        <button class="btn btn-ghost btn-sm" onclick="clearAllData()" style="color:var(--accent)">🗑 전체 데이터 초기화</button>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text3)">* 데이터는 브라우저 localStorage에 저장됩니다. 다른 기기와 공유하려면 Google Sheets 연동을 사용하세요.</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- Add Book Modal -->
+<div class="modal-overlay" id="modal-addbook">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">교재 추가</div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('modal-addbook')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group" style="grid-column:span 2">
+          <label>교재명</label>
+          <input type="text" class="input" id="nb-name" placeholder="예: English World 4">
+        </div>
+        <div class="form-group">
+          <label>현재 수량</label>
+          <input type="number" class="input" id="nb-count" min="0" value="0">
+        </div>
+        <div class="form-group">
+          <label>최저 수량 (경고 기준)</label>
+          <input type="number" class="input" id="nb-min" min="0" value="3">
+        </div>
+        <div class="form-group" style="grid-column:span 2">
+          <label>주문처</label>
+          <input type="text" class="input" id="nb-vendor" placeholder="예: 넥서스, A서점" list="vendor-list">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-addbook')">취소</button>
+      <button class="btn btn-primary" onclick="addBook()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- History Detail / Edit Modal -->
+<div class="modal-overlay" id="modal-detail">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title" id="detail-modal-title">주문 상세</div>
+      <button class="btn btn-ghost btn-sm btn-icon" onclick="closeModal('modal-detail')">✕</button>
+    </div>
+    <div class="modal-tabs">
+      <button class="modal-tab active" id="tab-view-btn" onclick="switchDetailTab('view')">📄 상세 보기</button>
+      <button class="modal-tab" id="tab-edit-btn" onclick="switchDetailTab('edit')">✏ 수정</button>
+    </div>
+
+    <!-- View Tab -->
+    <div class="modal-tab-content active" id="tab-view">
+      <div id="detail-view-body" style="border-radius:0 0 14px 14px;overflow:hidden"></div>
+      <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <div id="detail-status-ctrl" style="display:flex;gap:8px;align-items:center"></div>
+        <button class="btn btn-ghost" onclick="closeModal('modal-detail')">닫기</button>
+      </div>
+    </div>
+
+    <!-- Edit Tab -->
+    <div class="modal-tab-content" id="tab-edit">
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>주문 상태</label>
+            <select class="input" id="e-status">
+              <option value="주문 필요">🔴 주문 필요</option>
+              <option value="주문 완료">🔵 주문 완료</option>
+              <option value="입고 완료">🟢 입고 완료</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>주문 일자</label>
+            <input type="date" class="input" id="e-date">
+          </div>
+          <div class="form-group">
+            <label>구분</label>
+            <select class="input" id="e-category">
+              <option value="유치부">유치부</option>
+              <option value="초등부">초등부</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>반명</label>
+            <input type="text" class="input" id="e-class" placeholder="예: Master A">
+          </div>
+          <div class="form-group">
+            <label>교재명</label>
+            <input type="text" class="input" id="e-book" list="book-list">
+          </div>
+          <div class="form-group">
+            <label>수량</label>
+            <input type="number" class="input" id="e-qty" min="1">
+          </div>
+          <div class="form-group">
+            <label>주문처</label>
+            <input type="text" class="input" id="e-vendor" list="vendor-list">
+          </div>
+          <div class="form-group">
+            <label>담당 선생님</label>
+            <input type="text" class="input" id="e-teacher">
+          </div>
+          <div class="form-group" style="grid-column:span 2">
+            <label>메모</label>
+            <textarea class="input" id="e-note" rows="3" style="resize:vertical"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-detail')">취소</button>
+        <button class="btn btn-primary" onclick="saveHistoryEdit()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =================== DATA ===================
+let inventory = [];
+let history = [];
+let currentFilter = 'all';
+let currentHistSearch = '';
+let sheetSettings = { url: '', id: '' };
+
+// =================== INIT ===================
+function init() {
+  loadData();
+  setDefaultDate();
+  renderInventory();
+  renderHistory();
+  updateInventoryStats();
+  updateHistoryStats();
+  updateBookDatalist();
+  updateUrgentDot();
+  loadSheetSettings();
+  applyTheme();
+}
+
+function loadData() {
+  const inv = localStorage.getItem('deskbook_inventory');
+  const hist = localStorage.getItem('deskbook_history');
+  inventory = inv ? JSON.parse(inv) : getSampleInventory();
+  history = hist ? JSON.parse(hist) : getSampleHistory();
+}
+
+function saveData() {
+  localStorage.setItem('deskbook_inventory', JSON.stringify(inventory));
+  localStorage.setItem('deskbook_history', JSON.stringify(history));
+}
+
+function getSampleInventory() {
+  return [
+    { id: uid(), name: 'English World 4', count: 15, minCount: 5, vendor: '넥서스' },
+    { id: uid(), name: 'Time Zones 1', count: 3, minCount: 5, vendor: 'Cengage' },
+    { id: uid(), name: 'My Phonics 2', count: 8, minCount: 3, vendor: '이퓨처' },
+    { id: uid(), name: 'Smart Junior 3', count: 0, minCount: 3, vendor: 'Macmillan' },
+    { id: uid(), name: 'Bricks Reading 100', count: 12, minCount: 4, vendor: '사피엔스21' },
+    { id: uid(), name: 'Reading Expert 2', count: 6, minCount: 3, vendor: 'NE능률' },
+    { id: uid(), name: 'Grammar In Use', count: 4, minCount: 4, vendor: '영어나라' },
+  ];
+}
+
+function getSampleHistory() {
+  const today = new Date().toISOString().split('T')[0];
+  return [
+    { id: uid(), status: '주문 필요', date: today, category: '초등부', class: 'Master A', book: 'Time Zones 1', qty: 10, vendor: 'Cengage', teacher: '이OO', note: '재고 부족' },
+    { id: uid(), status: '주문 완료', date: '2026-04-20', category: '유치부', class: 'K2반', book: 'My Phonics 2', qty: 5, vendor: '이퓨처', teacher: '김OO', note: '' },
+    { id: uid(), status: '입고 완료', date: '2026-04-15', category: '초등부', class: 'Junior B', book: 'English World 4', qty: 8, vendor: '넥서스', teacher: '박OO', note: '' },
+    { id: uid(), status: '주문 필요', date: today, category: '초등부', class: 'Rookie', book: 'Smart Junior 3', qty: 6, vendor: 'Macmillan', teacher: '이OO', note: '긴급 주문 필요' },
+  ];
+}
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2); }
+
+function setDefaultDate() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('h-date').value = today;
+}
+
+// =================== NAVIGATION ===================
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const btns = document.querySelectorAll('.nav-btn');
+  const idx = ['inventory','history','settings'].indexOf(name);
+  btns[idx].classList.add('active');
+  if (name === 'inventory') { renderInventory(); updateInventoryStats(); }
+  if (name === 'history') { renderHistory(); updateHistoryStats(); }
+}
+
+// =================== INVENTORY ===================
+function renderInventory(filter = '') {
+  const tbody = document.getElementById('inventory-table');
+  const list = filter
+    ? inventory.filter(i => i.name.toLowerCase().includes(filter.toLowerCase()))
+    : inventory;
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text3)">교재가 없습니다. 교재를 추가해주세요.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map((item, idx) => {
+    const isLow = item.count <= item.minCount;
+    const isZero = item.count === 0;
+    const statusBadge = isZero
+      ? `<span class="badge badge-red">재고 없음</span>`
+      : isLow
+        ? `<span class="badge badge-yellow">⚠ 부족</span>`
+        : `<span class="badge badge-green">✓ 정상</span>`;
+    return `
+      <tr class="${isZero ? 'status-urgent' : ''}">
+        <td class="mono" style="color:var(--text3)">${idx+1}</td>
+        <td style="font-weight:500">${item.name}</td>
+        <td style="color:var(--text2)">${item.vendor || '-'}</td>
+        <td>
+          <div class="count-ctrl">
+            <button class="count-btn" onclick="changeCount('${item.id}',-1)">−</button>
+            <input type="number" class="input input-sm" style="width:64px;text-align:center"
+              value="${item.count}" min="0"
+              onchange="setCount('${item.id}', this.value)"
+              onblur="setCount('${item.id}', this.value)">
+            <button class="count-btn" onclick="changeCount('${item.id}',1)">＋</button>
+          </div>
+        </td>
+        <td class="mono" style="color:var(--text3)">${item.minCount}</td>
+        <td>${statusBadge}</td>
+        <td class="action-cell">
+          <div id="del-wrap-${item.id}" style="display:flex;align-items:center;gap:6px">
+            <button class="btn btn-ghost btn-sm" style="color:var(--accent)" onclick="event.stopPropagation();showDelConfirm('${item.id}')">삭제</button>
+            <div class="inline-confirm" id="del-confirm-${item.id}">
+              <span>삭제할까요?</span>
+              <button class="btn btn-sm" style="background:var(--accent);color:white;padding:4px 10px" onclick="event.stopPropagation();confirmDeleteBook('${item.id}')">확인</button>
+              <button class="btn btn-ghost btn-sm" style="padding:4px 10px" onclick="event.stopPropagation();hideDelConfirm('${item.id}')">취소</button>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function filterInventory(q) { renderInventory(q); }
+
+function changeCount(id, delta) {
+  const item = inventory.find(i => i.id === id);
+  if (!item) return;
+  item.count = Math.max(0, item.count + delta);
+  saveData();
+  renderInventory(document.getElementById('inv-search').value);
+  updateInventoryStats();
+  updateUrgentDot();
+}
+
+function setCount(id, val) {
+  const item = inventory.find(i => i.id === id);
+  if (!item) return;
+  item.count = Math.max(0, parseInt(val) || 0);
+  saveData();
+  updateInventoryStats();
+  updateUrgentDot();
+}
+
+function showDelConfirm(id) {
+  // hide all other confirms first
+  document.querySelectorAll('.inline-confirm').forEach(el => el.classList.remove('show'));
+  document.getElementById('del-confirm-' + id).classList.add('show');
+}
+function hideDelConfirm(id) {
+  document.getElementById('del-confirm-' + id).classList.remove('show');
+}
+function confirmDeleteBook(id) {
+  inventory = inventory.filter(i => i.id !== id);
+  saveData();
+  renderInventory(document.getElementById('inv-search').value);
+  updateInventoryStats();
+  updateBookDatalist();
+  toast('교재가 삭제되었습니다.');
+}
+
+function deleteBook(id) {
+  if (!confirm('이 교재를 삭제하시겠습니까?')) return;
+  inventory = inventory.filter(i => i.id !== id);
+  saveData();
+  renderInventory(document.getElementById('inv-search').value);
+  updateInventoryStats();
+  updateBookDatalist();
+  toast('교재가 삭제되었습니다.');
+}
+
+function openAddBookModal() {
+  document.getElementById('nb-name').value = '';
+  document.getElementById('nb-count').value = '0';
+  document.getElementById('nb-min').value = '3';
+  document.getElementById('nb-vendor').value = '';
+  openModal('modal-addbook');
+}
+
+function addBook() {
+  const name = document.getElementById('nb-name').value.trim();
+  if (!name) { toast('교재명을 입력해주세요.'); return; }
+  if (inventory.find(i => i.name === name)) { toast('이미 존재하는 교재명입니다.'); return; }
+  inventory.push({
+    id: uid(),
+    name,
+    count: parseInt(document.getElementById('nb-count').value) || 0,
+    minCount: parseInt(document.getElementById('nb-min').value) || 3,
+    vendor: document.getElementById('nb-vendor').value.trim()
+  });
+  saveData();
+  renderInventory(document.getElementById('inv-search').value);
+  updateInventoryStats();
+  updateBookDatalist();
+  closeModal('modal-addbook');
+  toast('교재가 추가되었습니다. ✓');
+}
+
+function updateInventoryStats() {
+  const total = inventory.length;
+  const zero = inventory.filter(i => i.count === 0).length;
+  const low = inventory.filter(i => i.count > 0 && i.count <= i.minCount).length;
+  const ok = total - zero - low;
+  document.getElementById('inv-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">전체 교재 종류</div>
+      <div class="stat-value">${total}</div>
+      <div class="stat-sub">종</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">재고 정상</div>
+      <div class="stat-value">${ok}</div>
+      <div class="stat-sub">종</div>
+    </div>
+    <div class="stat-card" style="--v:var(--yellow)">
+      <div class="stat-label">재고 부족 주의</div>
+      <div class="stat-value" style="color:var(--yellow)">${low}</div>
+      <div class="stat-sub">종</div>
+    </div>
+    <div class="stat-card red">
+      <div class="stat-label">재고 없음</div>
+      <div class="stat-value">${zero}</div>
+      <div class="stat-sub">종</div>
+    </div>
+  `;
+}
+
+// =================== HISTORY ===================
+function addHistoryRecord() {
+  const status = document.getElementById('h-status').value;
+  const date = document.getElementById('h-date').value;
+  const category = document.getElementById('h-category').value;
+  const cls = document.getElementById('h-class').value.trim();
+  const book = document.getElementById('h-book').value.trim();
+  const qty = parseInt(document.getElementById('h-qty').value) || 0;
+  const vendor = document.getElementById('h-vendor').value.trim();
+  const teacher = document.getElementById('h-teacher').value.trim();
+  const note = document.getElementById('h-note').value.trim();
+
+  if (!date || !book || !qty) { toast('날짜, 교재명, 수량은 필수입니다.'); return; }
+
+  history.unshift({ id: uid(), status, date, category, class: cls, book, qty, vendor, teacher, note });
+  saveData();
+  renderHistory();
+  updateHistoryStats();
+  updateUrgentDot();
+  clearHistoryForm();
+  toast('주문 기록이 추가되었습니다. ✓');
+}
+
+function clearHistoryForm() {
+  document.getElementById('h-status').value = '주문 필요';
+  setDefaultDate();
+  document.getElementById('h-category').value = '유치부';
+  document.getElementById('h-class').value = '';
+  document.getElementById('h-book').value = '';
+  document.getElementById('h-qty').value = '1';
+  document.getElementById('h-vendor').value = '';
+  document.getElementById('h-teacher').value = '';
+  document.getElementById('h-note').value = '';
+}
+
+let activeFilter = 'all';
+let activeSearch = '';
+
+function setFilter(val, el) {
+  activeFilter = val;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory();
+}
+
+function searchHistory(q) { activeSearch = q; renderHistory(); }
+
+function getFilteredHistory() {
+  return history.filter(h => {
+    const matchFilter = activeFilter === 'all' || h.status === activeFilter || h.category === activeFilter;
+    const q = activeSearch.toLowerCase();
+    const matchSearch = !q || h.book.toLowerCase().includes(q) || h.teacher.toLowerCase().includes(q) || (h.class||'').toLowerCase().includes(q);
+    return matchFilter && matchSearch;
+  });
+}
+
+function renderHistory() {
+  const data = getFilteredHistory();
+  const tbody = document.getElementById('history-table');
+  document.getElementById('hist-count').textContent = `(${data.length}건)`;
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:40px;color:var(--text3)">해당하는 주문 기록이 없습니다.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = data.map(h => {
+    const isUrgent = h.status === '주문 필요';
+    const badge = h.status === '주문 필요'
+      ? `<span class="badge badge-red">🔴 주문 필요</span>`
+      : h.status === '주문 완료'
+        ? `<span class="badge badge-blue">🔵 주문 완료</span>`
+        : `<span class="badge badge-green">🟢 입고 완료</span>`;
+
+    const nextStatus = h.status === '주문 필요' ? '주문 완료' : h.status === '주문 완료' ? '입고 완료' : null;
+    const nextBtn = nextStatus
+      ? `<button class="btn btn-sm" style="background:${nextStatus==='주문 완료'?'var(--blue)':'var(--green)'};color:white;font-size:12px" onclick="advanceStatus('${h.id}')">→ ${nextStatus}</button>`
+      : `<span style="color:var(--text3);font-size:12px">완료</span>`;
+
+    return `
+      <tr class="${isUrgent ? 'status-urgent' : ''} clickable-row" onclick="openDetailModal('${h.id}','edit')" title="클릭하여 수정">
+        <td>${badge}</td>
+        <td class="mono" style="font-size:13px">${h.date}</td>
+        <td><span class="badge ${h.category==='유치부'?'badge-yellow':'badge-blue'}" style="font-size:12px">${h.category}</span></td>
+        <td style="font-size:13px">${h.class || '-'}</td>
+        <td style="font-weight:500">${h.book}</td>
+        <td class="mono" style="text-align:center;font-weight:600">${h.qty}</td>
+        <td style="color:var(--text2);font-size:13px">${h.vendor || '-'}</td>
+        <td style="font-size:13px">${h.teacher || '-'}</td>
+        <td style="color:var(--text3);font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${h.note||''}">${h.note || '-'}</td>
+        <td class="action-cell" onclick="event.stopPropagation()">
+          ${nextBtn}
+        </td>
+        <td class="action-cell" onclick="event.stopPropagation()">
+          <div id="hdel-wrap-${h.id}" style="display:flex;align-items:center;gap:6px">
+            <button class="btn btn-ghost btn-sm" style="color:var(--accent);font-size:12px" onclick="showHDelConfirm('${h.id}')">삭제</button>
+            <div class="inline-confirm" id="hdel-confirm-${h.id}">
+              <span>삭제?</span>
+              <button class="btn btn-sm" style="background:var(--accent);color:white;padding:4px 8px;font-size:12px" onclick="confirmDeleteHistory('${h.id}')">확인</button>
+              <button class="btn btn-ghost btn-sm" style="padding:4px 8px;font-size:12px" onclick="hideHDelConfirm('${h.id}')">취소</button>
+            </div>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+function advanceStatus(id) {
+  const h = history.find(i => i.id === id);
+  if (!h) return;
+  if (h.status === '주문 필요') h.status = '주문 완료';
+  else if (h.status === '주문 완료') h.status = '입고 완료';
+  saveData();
+  renderHistory();
+  updateHistoryStats();
+  updateUrgentDot();
+  toast(`상태가 "${h.status}"로 변경되었습니다.`);
+}
+
+function showHDelConfirm(id) {
+  document.querySelectorAll('.inline-confirm').forEach(el => el.classList.remove('show'));
+  document.getElementById('hdel-confirm-' + id).classList.add('show');
+}
+function hideHDelConfirm(id) {
+  document.getElementById('hdel-confirm-' + id).classList.remove('show');
+}
+function confirmDeleteHistory(id) {
+  history = history.filter(i => i.id !== id);
+  saveData();
+  renderHistory();
+  updateHistoryStats();
+  updateUrgentDot();
+  toast('기록이 삭제되었습니다.');
+}
+
+function deleteHistory(id) {
+  if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+  history = history.filter(i => i.id !== id);
+  saveData();
+  renderHistory();
+  updateHistoryStats();
+  updateUrgentDot();
+  toast('기록이 삭제되었습니다.');
+}
+
+// =================== DETAIL / EDIT MODAL ===================
+let currentDetailId = null;
+
+function openDetailModal(id, tab = 'view') {
+  const h = history.find(i => i.id === id);
+  if (!h) return;
+  currentDetailId = id;
+
+  // Populate view
+  const statusBadge = h.status === '주문 필요'
+    ? `<span class="badge badge-red">🔴 주문 필요</span>`
+    : h.status === '주문 완료'
+      ? `<span class="badge badge-blue">🔵 주문 완료</span>`
+      : `<span class="badge badge-green">🟢 입고 완료</span>`;
+
+  document.getElementById('detail-modal-title').textContent = `✏ ${h.book} — 수정`;
+  document.getElementById('detail-view-body').innerHTML = `
+    <div class="detail-row"><div class="detail-label">상태</div><div class="detail-value">${statusBadge}</div></div>
+    <div class="detail-row"><div class="detail-label">주문 일자</div><div class="detail-value mono">${h.date}</div></div>
+    <div class="detail-row"><div class="detail-label">구분</div><div class="detail-value"><span class="badge ${h.category==='유치부'?'badge-yellow':'badge-blue'}">${h.category}</span></div></div>
+    <div class="detail-row"><div class="detail-label">반명</div><div class="detail-value">${h.class || '-'}</div></div>
+    <div class="detail-row"><div class="detail-label">교재명</div><div class="detail-value" style="font-weight:600">${h.book}</div></div>
+    <div class="detail-row"><div class="detail-label">수량</div><div class="detail-value mono" style="font-weight:600">${h.qty}권</div></div>
+    <div class="detail-row"><div class="detail-label">주문처</div><div class="detail-value">${h.vendor || '-'}</div></div>
+    <div class="detail-row"><div class="detail-label">담당 선생님</div><div class="detail-value">${h.teacher || '-'}</div></div>
+    <div class="detail-row"><div class="detail-label">메모</div><div class="detail-value" style="white-space:pre-wrap;color:${h.note?'var(--text)':'var(--text3)'}">${h.note || '메모 없음'}</div></div>
+  `;
+
+  // Status advance button in detail view footer
+  const nextStatus = h.status === '주문 필요' ? '주문 완료' : h.status === '주문 완료' ? '입고 완료' : null;
+  const ctrl = document.getElementById('detail-status-ctrl');
+  ctrl.innerHTML = nextStatus
+    ? `<button class="btn btn-sm" style="background:${nextStatus==='주문 완료'?'var(--blue)':'var(--green)'};color:white" onclick="advanceStatusFromModal('${h.id}')">→ ${nextStatus}로 변경</button>`
+    : `<span class="badge badge-green" style="font-size:13px">✓ 입고 완료</span>`;
+
+  // Populate edit form
+  document.getElementById('e-status').value = h.status;
+  document.getElementById('e-date').value = h.date;
+  document.getElementById('e-category').value = h.category;
+  document.getElementById('e-class').value = h.class || '';
+  document.getElementById('e-book').value = h.book;
+  document.getElementById('e-qty').value = h.qty;
+  document.getElementById('e-vendor').value = h.vendor || '';
+  document.getElementById('e-teacher').value = h.teacher || '';
+  document.getElementById('e-note').value = h.note || '';
+
+  switchDetailTab(tab);
+  openModal('modal-detail');
+}
+
+function switchDetailTab(tab) {
+  document.getElementById('tab-view').classList.toggle('active', tab === 'view');
+  document.getElementById('tab-edit').classList.toggle('active', tab === 'edit');
+  document.getElementById('tab-view-btn').classList.toggle('active', tab === 'view');
+  document.getElementById('tab-edit-btn').classList.toggle('active', tab === 'edit');
+}
+
+function advanceStatusFromModal(id) {
+  advanceStatus(id);
+  // Refresh detail view
+  openDetailModal(id, 'view');
+}
+
+function saveHistoryEdit() {
+  const h = history.find(i => i.id === currentDetailId);
+  if (!h) return;
+  h.status   = document.getElementById('e-status').value;
+  h.date     = document.getElementById('e-date').value;
+  h.category = document.getElementById('e-category').value;
+  h.class    = document.getElementById('e-class').value.trim();
+  h.book     = document.getElementById('e-book').value.trim();
+  h.qty      = parseInt(document.getElementById('e-qty').value) || 1;
+  h.vendor   = document.getElementById('e-vendor').value.trim();
+  h.teacher  = document.getElementById('e-teacher').value.trim();
+  h.note     = document.getElementById('e-note').value.trim();
+  if (!h.date || !h.book) { toast('날짜와 교재명은 필수입니다.'); return; }
+  saveData();
+  renderHistory();
+  updateHistoryStats();
+  updateUrgentDot();
+  closeModal('modal-detail');
+  toast('기록이 수정되었습니다. ✓');
+}
+
+function updateHistoryStats() {
+  const urgent = history.filter(h => h.status === '주문 필요').length;
+  const ordered = history.filter(h => h.status === '주문 완료').length;
+  const received = history.filter(h => h.status === '입고 완료').length;
+  document.getElementById('hist-stats').innerHTML = `
+    <div class="stat-card red">
+      <div class="stat-label">주문 필요</div>
+      <div class="stat-value">${urgent}</div>
+      <div class="stat-sub">건 대기 중</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">주문 완료</div>
+      <div class="stat-value" style="color:var(--blue)">${ordered}</div>
+      <div class="stat-sub">건 입고 대기</div>
+    </div>
+    <div class="stat-card green">
+      <div class="stat-label">입고 완료</div>
+      <div class="stat-value">${received}</div>
+      <div class="stat-sub">건</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">전체 주문 기록</div>
+      <div class="stat-value">${history.length}</div>
+      <div class="stat-sub">건</div>
+    </div>
+  `;
+}
+
+function updateUrgentDot() {
+  const cnt = history.filter(h => h.status === '주문 필요').length;
+  const dot = document.getElementById('urgent-dot');
+  dot.style.display = cnt > 0 ? 'inline-block' : 'none';
+}
+
+// =================== DATALISTS ===================
+function updateBookDatalist() {
+  const dl = document.getElementById('book-list');
+  if (dl) dl.innerHTML = inventory.map(i => `<option value="${i.name}">`).join('');
+  const vdl = document.getElementById('vendor-list');
+  const vendors = [...new Set([...inventory.map(i=>i.vendor), ...history.map(h=>h.vendor)].filter(Boolean))];
+  if (vdl) vdl.innerHTML = vendors.map(v => `<option value="${v}">`).join('');
+}
+
+// =================== MODAL ===================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => {
+  // Close inline confirms when clicking elsewhere
+  if (!e.target.closest('.inline-confirm') && !e.target.closest('.btn')) {
+    document.querySelectorAll('.inline-confirm').forEach(el => el.classList.remove('show'));
+  }
+  // Close modal when clicking overlay background
+  if (e.target.classList.contains('modal-overlay')) closeModal(e.target.id);
+});
+
+// =================== EXPORT ===================
+function makeCSV(headers, rows) {
+  return [headers, ...rows]
+    .map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+}
+
+function downloadCSV(csv, filename) {
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportInventoryCSV() {
+  const headers = ['교재명', '주문처', '현재수량', '최저수량', '재고상태'];
+  const rows = inventory.map(i => {
+    const status = i.count === 0 ? '재고없음' : i.count <= i.minCount ? '부족' : '정상';
+    return [i.name, i.vendor, i.count, i.minCount, status];
+  });
+  const today = new Date().toISOString().split('T')[0];
+  downloadCSV(makeCSV(headers, rows), `재고목록_${today}.csv`);
+  toast(`재고 목록 ${inventory.length}건을 CSV로 내보냈습니다. ✓`);
+}
+
+function exportCSV(mode = 'filtered') {
+  const data = mode === 'all' ? history : getFilteredHistory();
+  const headers = ['주문상태', '주문일자', '구분', '반명', '교재명', '수량', '주문처', '담당선생님', '메모'];
+  const rows = data.map(h => [h.status, h.date, h.category, h.class, h.book, h.qty, h.vendor, h.teacher, h.note]);
+  const today = new Date().toISOString().split('T')[0];
+  const label = mode === 'all' ? '전체' : '필터';
+  downloadCSV(makeCSV(headers, rows), `주문히스토리_${label}_${today}.csv`);
+  toast(`주문 히스토리 ${data.length}건을 CSV로 내보냈습니다. ✓`);
+}
+
+function exportAllCSV() {
+  const today = new Date().toISOString().split('T')[0];
+  // Sheet 1: 재고
+  const invHeaders = ['교재명', '주문처', '현재수량', '최저수량', '재고상태'];
+  const invRows = inventory.map(i => {
+    const status = i.count === 0 ? '재고없음' : i.count <= i.minCount ? '부족' : '정상';
+    return [i.name, i.vendor, i.count, i.minCount, status];
+  });
+  // Sheet 2: 히스토리 — 하나의 CSV에 구분선으로 합침
+  const histHeaders = ['주문상태', '주문일자', '구분', '반명', '교재명', '수량', '주문처', '담당선생님', '메모'];
+  const histRows = history.map(h => [h.status, h.date, h.category, h.class, h.book, h.qty, h.vendor, h.teacher, h.note]);
+
+  const combined =
+    '=== 재고 목록 ===\n' +
+    makeCSV(invHeaders, invRows) +
+    '\n\n=== 주문 히스토리 ===\n' +
+    makeCSV(histHeaders, histRows);
+
+  downloadCSV(combined, `전체데이터_${today}.csv`);
+  toast(`재고 ${inventory.length}건 + 히스토리 ${history.length}건 통합 CSV로 내보냈습니다. ✓`);
+}
+
+function exportAllData() {
+  const data = JSON.stringify({ inventory, history }, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `deskbook_backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
+  URL.revokeObjectURL(url);
+  toast('데이터가 JSON으로 내보내졌습니다.');
+}
+
+function clearAllData() {
+  if (!confirm('모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return;
+  inventory = getSampleInventory();
+  history = getSampleHistory();
+  saveData();
+  renderInventory(); updateInventoryStats();
+  renderHistory(); updateHistoryStats();
+  updateBookDatalist(); updateUrgentDot();
+  toast('데이터가 초기화되었습니다.');
+}
+
+// =================== GOOGLE SHEETS ===================
+function loadSheetSettings() {
+  const s = localStorage.getItem('deskbook_sheets');
+  if (s) {
+    sheetSettings = JSON.parse(s);
+    document.getElementById('sheets-url').value = sheetSettings.url || '';
+    document.getElementById('sheets-id').value = sheetSettings.id || '';
+  }
+}
+
+function saveSheetSettings() {
+  sheetSettings.url = document.getElementById('sheets-url').value.trim();
+  sheetSettings.id = document.getElementById('sheets-id').value.trim();
+  localStorage.setItem('deskbook_sheets', JSON.stringify(sheetSettings));
+  toast('설정이 저장되었습니다. ✓');
+}
+
+async function testSheetConnection() {
+  const url = document.getElementById('sheets-url').value.trim();
+  if (!url) { toast('웹앱 URL을 먼저 입력하세요.'); return; }
+  const status = document.getElementById('sheet-status');
+  status.textContent = '연결 테스트 중...';
+  try {
+    const res = await fetch(`${url}?sheet=inventory`, { method: 'GET', mode: 'cors' });
+    if (res.ok) {
+      status.textContent = '✅ 연결 성공! Google Sheets와 정상 연결되었습니다.';
+      status.style.color = 'var(--green)';
+    } else {
+      throw new Error('응답 오류');
+    }
+  } catch (e) {
+    status.textContent = '❌ 연결 실패. URL을 확인하거나 Apps Script 배포 설정을 확인해주세요.';
+    status.style.color = 'var(--accent)';
+  }
+}
+
+async function syncToSheets(type) {
+  if (!sheetSettings.url) { toast('설정에서 Google Sheets URL을 먼저 입력하세요.'); showPage('settings'); return; }
+  try {
+    const data = type === 'inventory'
+      ? { sheet: 'inventory', action: 'clear_and_write', rows: [['id','name','count','minCount','vendor'], ...inventory.map(i => [i.id,i.name,i.count,i.minCount,i.vendor])] }
+      : { sheet: 'history', action: 'clear_and_write', rows: [['id','status','date','category','class','book','qty','vendor','teacher','note'], ...history.map(h => [h.id,h.status,h.date,h.category,h.class,h.book,h.qty,h.vendor,h.teacher,h.note])] };
+    await fetch(sheetSettings.url, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+    toast('Google Sheets로 동기화되었습니다. ✓');
+  } catch (e) {
+    toast('동기화 중 오류가 발생했습니다.');
+  }
+}
+
+async function loadFromSheets() {
+  if (!sheetSettings.url) { toast('설정에서 Google Sheets URL을 먼저 입력하세요.'); return; }
+  const status = document.getElementById('sheet-status');
+  status.textContent = '불러오는 중...';
+  try {
+    const [invRes, histRes] = await Promise.all([
+      fetch(`${sheetSettings.url}?sheet=inventory`),
+      fetch(`${sheetSettings.url}?sheet=history`)
+    ]);
+    const invData = await invRes.json();
+    const histData = await histRes.json();
+    if (invData.data) inventory = invData.data;
+    if (histData.data) history = histData.data;
+    saveData();
+    renderInventory(); updateInventoryStats();
+    renderHistory(); updateHistoryStats();
+    updateBookDatalist(); updateUrgentDot();
+    status.textContent = `✅ 불러오기 완료 (교재 ${inventory.length}종, 기록 ${history.length}건)`;
+    status.style.color = 'var(--green)';
+    toast('Google Sheets에서 데이터를 불러왔습니다. ✓');
+  } catch (e) {
+    status.textContent = '❌ 불러오기 실패. 연결을 확인해주세요.';
+    status.style.color = 'var(--accent)';
+  }
+}
+
+// =================== THEME ===================
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') === 'dark';
+  html.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  document.querySelector('.theme-btn').textContent = isDark ? '🌙' : '☀️';
+  localStorage.setItem('deskbook_theme', isDark ? 'light' : 'dark');
+}
+
+function applyTheme() {
+  const saved = localStorage.getItem('deskbook_theme');
+  if (saved) {
+    document.documentElement.setAttribute('data-theme', saved);
+    document.querySelector('.theme-btn').textContent = saved === 'dark' ? '☀️' : '🌙';
+  }
+}
+
+// =================== TOAST ===================
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// =================== START ===================
+init();
+</script>
+</body>
+</html>
